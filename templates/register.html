@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}注册 / 上传公钥 - KeyHub{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <h1>📝 注册账号 & 上传 GPG 公钥</h1>
+  <p class="lead">
+    上传你的邮箱、昵称和 GPG 公钥（ASCII Armor 格式，即以
+    <code>-----BEGIN PGP PUBLIC KEY BLOCK-----</code> 开头的文本）。
+    其他用户就能在“用户列表”里选择你，发送只有你用私钥才能解开的加密邮件。
+  </p>
+</section>
+
+<section class="card form-only">
+  <form method="POST" action="{{ url_for('register_submit') }}" id="register-form">
+    <div class="field">
+      <label for="email">邮箱地址 *</label>
+      <input type="email" id="email" name="email" required
+             placeholder="you@example.com"
+             value="{{ form_data.email if form_data else '' }}">
+      <small class="hint">这既是你的登录标识，也是他人向你发送加密邮件的收件人地址。</small>
+    </div>
+
+    <div class="field">
+      <label for="nickname">昵称（可选）</label>
+      <input type="text" id="nickname" name="nickname" maxlength="50"
+             placeholder="张三 / Tom"
+             value="{{ form_data.nickname if form_data else '' }}">
+    </div>
+
+    <div class="field">
+      <label for="public_key">GPG 公钥（粘贴公钥文本）*</label>
+      <textarea id="public_key" name="public_key" rows="12" required spellcheck="false"
+                placeholder="-----BEGIN PGP PUBLIC KEY BLOCK-----&#10;...&#10;-----END PGP PUBLIC KEY BLOCK-----">{{ form_data.public_key if form_data else '' }}</textarea>
+      <small class="hint">
+        如何导出：<code>gpg --armor --export 你的邮箱</code>，然后把整段输出粘贴到这里。
+        只接受<strong>公钥</strong>，不要上传私钥！
+      </small>
+    </div>
+
+    <div class="actions">
+      <button type="submit" class="btn btn-primary">✅ 提交并保存</button>
+      <a href="{{ url_for('index') }}" class="btn">返回用户列表</a>
+    </div>
+  </form>
+</section>
+
+<section class="card form-only">
+  <h2>🤔 还没有 GPG 密钥对？两分钟生成一对：</h2>
+  <ol class="steps">
+    <li>安装 GPG：
+      <ul>
+        <li>macOS：<code>brew install gnupg</code>，或下载 <a href="https://gpgtools.org/" target="_blank" rel="noopener">GPG Suite</a></li>
+        <li>Windows：下载 <a href="https://www.gpg4win.org/" target="_blank" rel="noopener">Gpg4win</a></li>
+        <li>Linux (Debian/Ubuntu)：<code>sudo apt install gnupg</code></li>
+      </ul>
+    </li>
+    <li>生成密钥对（带你的邮箱）：<br>
+      <code>gpg --full-generate-key</code>，一路默认即可，注意设置一个强口令保护私钥。
+    </li>
+    <li>导出公钥：<br>
+      <code>gpg --armor --export you@example.com &gt; my_public_key.asc</code>，
+      然后把 <code>my_public_key.asc</code> 里的内容复制到上面的文本框即可。
+    </li>
+  </ol>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // 简单的提交前校验
+  document.getElementById('register-form').addEventListener('submit', (e) => {
+    const pk = document.getElementById('public_key').value.trim();
+    if (!pk.includes('BEGIN PGP PUBLIC KEY BLOCK') || !pk.includes('END PGP PUBLIC KEY BLOCK')) {
+      if (!confirm('你粘贴的公钥不像标准的 ASCII Armor 格式（缺少 BEGIN/END 标记）。\n确认仍然提交吗？')) {
+        e.preventDefault();
+        return false;
+      }
+    }
+  });
+</script>
+{% endblock %}

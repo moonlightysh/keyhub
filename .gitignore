@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+
+# Flask 上传 / 数据
+data/
+*.tmp.*
+
+# 环境变量（包含敏感的 SMTP 密码等，不要上传到仓库）
+.env
+
+# 其他
+.DS_Store
+.vscode/
+.idea/
+*.log

@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}KeyHub - GPG 加密消息{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <h1>🔐 GPG 加密消息</h1>
+  <p class="lead">
+    选中收件人 → 输入消息 → 生成密文。密文用对方公钥加密，复制后通过任意渠道发给对方即可。
+  </p>
+</section>
+
+<section class="card">
+  {% if not users %}
+    <div class="empty-tip">
+      <p>⚠️ 还没有任何注册用户。先去 <a href="{{ url_for('register') }}">注册 / 上传公钥</a> 吧～</p>
+    </div>
+  {% else %}
+
+    <div class="layout">
+      <!-- 步骤 1：选中收件人 -->
+      <aside class="user-panel">
+        <h2><span class="step-num">1</span> 选中收件人</h2>
+        <div class="search-row">
+          <input id="user-search" type="search" placeholder="🔍 搜索昵称或邮箱…" autocomplete="off">
+        </div>
+        <ul class="user-list" id="user-list">
+          {% for u in users %}
+          <li class="user-item"
+              data-email="{{ u.email }}"
+              data-nickname="{{ u.nickname }}">
+            <label>
+              <input type="radio" name="recipient" value="{{ u.email }}"
+                     data-nickname="{{ u.nickname }}">
+              <span class="u-main">
+                <strong class="u-nickname">{{ u.nickname }}</strong>
+                <span class="u-email">{{ u.email }}</span>
+              </span>
+            </label>
+          </li>
+          {% endfor %}
+        </ul>
+      </aside>
+
+      <!-- 步骤 2 + 3：输入消息 + 生成密文 -->
+      <form class="form-panel" method="POST" action="{{ url_for('send_message') }}" id="msg-form">
+        <h2><span class="step-num">2</span> 输入消息正文</h2>
+
+        <div class="field">
+          <label for="recipient">收件人</label>
+          <input type="email" id="recipient" name="recipient" required readonly
+                 placeholder="请先在左侧选中一位用户">
+          <input type="hidden" id="recipient_nickname" name="recipient_nickname">
+        </div>
+
+        <div class="field">
+          <label for="message">消息正文（将被 GPG 加密）</label>
+          <textarea id="message" name="message" rows="8" required
+                    placeholder="例如：密码是 abc123"></textarea>
+          <small class="hint">
+            🛡️ 消息在服务器端使用收件人公钥加密，只有对方私钥能解密。
+          </small>
+        </div>
+
+        <div class="actions">
+          <h2><span class="step-num">3</span></h2>
+          <button type="submit" class="btn btn-primary">🔒 生成密文</button>
+          <button type="reset" class="btn">清空</button>
+        </div>
+      </form>
+    </div>
+
+  {% endif %}
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // 1) 选中收件人 -> 填入表单
+  const form = document.getElementById('msg-form');
+  const recipientInput = document.getElementById('recipient');
+  const recipientNicknameInput = document.getElementById('recipient_nickname');
+  if (form && recipientInput) {
+    document.querySelectorAll('input[name="recipient"]').forEach((r) => {
+      r.addEventListener('change', () => {
+        recipientInput.value = r.value;
+        recipientNicknameInput.value = r.dataset.nickname || '';
+        document.querySelectorAll('.user-item').forEach(li => li.classList.remove('selected'));
+        r.closest('.user-item').classList.add('selected');
+      });
+    });
+  }
+
+  // 2) 搜索过滤
+  const search = document.getElementById('user-search');
+  const items = document.querySelectorAll('.user-item');
+  if (search && items.length) {
+    search.addEventListener('input', () => {
+      const kw = search.value.trim().toLowerCase();
+      items.forEach(li => {
+        const text = (li.dataset.email + ' ' + li.dataset.nickname).toLowerCase();
+        li.style.display = !kw || text.includes(kw) ? '' : 'none';
+      });
+    });
+  }
+
+  // 3) 提交前校验
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      if (!recipientInput.value) {
+        e.preventDefault();
+        alert('请先在左侧选择一位收件人');
+        return false;
+      }
+      const msg = document.getElementById('message').value.trim();
+      if (!msg) {
+        e.preventDefault();
+        alert('消息内容不能为空');
+        return false;
+      }
+    });
+  }
+</script>
+{% endblock %}

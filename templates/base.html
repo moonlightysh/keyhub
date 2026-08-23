@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}KeyHub - GPG 加密消息{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="logo" href="{{ url_for('index') }}">🔐 KeyHub</a>
+      <nav>
+        <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}active{% endif %}">加密消息</a>
+        <a href="{{ url_for('register') }}" class="{% if request.endpoint == 'register' %}active{% endif %}">注册 / 上传公钥</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container main">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flashes">
+          {% for category, msg in messages %}
+            <div class="flash flash-{{ category }}">{{ msg }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <small>
+        消息用收件人 GPG 公钥加密，即使密文被中间人截获，没有私钥也无法解密。
+        公钥/用户数据以 JSON 文件存储，不依赖任何数据库。
+      </small>
+    </div>
+  </footer>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

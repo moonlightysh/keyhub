@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}加密密文 - KeyHub{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <h1>🔒 密文已生成</h1>
+  <p class="lead">
+    收件人：<strong>{{ recipient }}</strong>
+  </p>
+</section>
+
+<section class="card">
+  <div class="copy-actions">
+    <button type="button" class="btn btn-primary" id="copy-btn">📋 一键复制密文</button>
+    <a href="{{ url_for('index') }}" class="btn">返回</a>
+  </div>
+  <p class="hint" style="margin-top: 12px;">
+    复制密文后通过任意渠道（微信、钉钉、邮件等）发给对方。对方执行
+    <code>gpg --decrypt message.asc</code> 即可看到原文。
+  </p>
+  <textarea id="cipher" readonly spellcheck="false" rows="22"
+            style="margin-top: 12px; width: 100%; padding: 12px; border: 1px solid #d0d7de;
+                   border-radius: 8px; font-family: ui-monospace, Menlo, Consolas, monospace;
+                   font-size: 13px; line-height: 1.5; background: #f6f8fa;">{{ armored }}</textarea>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const btn = document.getElementById('copy-btn');
+  const ta = document.getElementById('cipher');
+  if (btn && ta) {
+    btn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(ta.value);
+        const old = btn.textContent;
+        btn.textContent = '✅ 已复制到剪贴板';
+        setTimeout(() => btn.textContent = old, 2000);
+      } catch (e) {
+        ta.select();
+        ta.setSelectionRange(0, ta.value.length);
+        alert('浏览器不支持自动复制，请按 Ctrl+C / Cmd+C 手动复制。');
+      }
+    });
+  }
+</script>
+{% endblock %}
