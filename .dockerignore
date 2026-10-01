@@ -12,6 +12,7 @@ __pycache__
 data/
 logs/
 *.md
+!USER_GUIDE.md
 *.log
 tests_smoke.py
 docker-compose.yml
