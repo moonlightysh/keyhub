@@ -28,7 +28,7 @@ COPY --from=builder /install /usr/local
 WORKDIR /app
 
 # 复制应用代码
-COPY app.py storage.py crypto_utils.py mailer.py backup_oss.py ./
+COPY app.py storage.py crypto_utils.py mailer.py backup_oss.py USER_GUIDE.md ./
 COPY templates ./templates
 COPY static ./static
 

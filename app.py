@@ -48,7 +48,8 @@ def _get_guide_html() -> str:
             md_text,
             extensions=["fenced_code", "tables", "toc", "sane_lists"],
         )
-    except Exception:
+    except Exception as e:
+        app.logger.error(f"加载用户指南失败: {e}")
         _GUIDE_HTML_CACHE = "<p>用户指南加载失败，请稍后重试。</p>"
     return _GUIDE_HTML_CACHE
 
