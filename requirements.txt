@@ -1,4 +1,4 @@
 Flask==3.0.3
 pgpy==0.6.0
 python-dotenv==1.0.1
-oss2==2.19.0
+markdown==3.6

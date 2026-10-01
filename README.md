@@ -1,93 +1,76 @@
-# keyhub
+# KeyHub
 
+一个轻量级的 **GPG 加密消息 Web 应用**。用户上传自己的 GPG 公钥后，其他人即可选中该用户作为收件人，输入敏感消息（密码、密钥、账号等），服务器用收件人公钥进行 AES-256 加密并输出 ASCII Armor 密文。用户把密文通过任意渠道发给对方，只有对方持有的私钥才能解密。
 
+## 特性
 
-## Getting started
+- 🔒 **端到端加密**：消息在服务器端用收件人 GPG 公钥加密，明文不落地、不外发
+- 🔑 **邀请码访问控制**：仅持有邀请码的用户可注册上传公钥，防止身份假冒
+- 📝 **JSON 文件存储**：用户数据存于 `data/users.json`，不依赖任何数据库
+- 🔐 **公钥合法性校验**：自动拒绝私钥上传，避免用户误操作
+- 🚀 **纯 Python 加密栈**：基于 PGPy，无需系统安装 GPG 命令
+- ☁️ **可选 OSS 备份**：支持将 `users.json` 定时增量备份到阿里云 OSS
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## 技术栈
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+- 后端：Flask + PGPy（GPG 加密）
+- 存储：JSON 文件（fcntl.flock 跨进程锁 + 原子写入）
+- 部署：gunicorn + nginx + systemd（阿里云 ECS）
 
-## Add your files
+## 快速开始（本地开发）
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+```bash
+# 1. 安装依赖
+pip install -r requirements.txt
+
+# 2. 配置环境变量（可选，留空 INVITE_CODE 则不启用邀请码）
+cp .env.example .env
+# 编辑 .env，按需填写
+
+# 3. 启动开发服务器
+python app.py
+# 访问 http://localhost:5000
+```
+
+## 环境变量
+
+参见 [.env.example](.env.example)，主要包括：
+
+| 变量 | 说明 |
+|------|------|
+| `FLASK_SECRET_KEY` | Flask Session 秘钥，生产环境务必修改 |
+| `FLASK_PORT` / `FLASK_DEBUG` | 运行端口与调试模式 |
+| `INVITE_CODE` | 邀请码，留空则不启用访问控制 |
+| `SMTP_*` | 可选，SMTP 直发加密邮件的配置 |
+| `OSS_*` | 可选，阿里云 OSS 备份配置 |
+
+## 部署到阿里云 ECS
+
+详见 [DEPLOY_ECS.md](DEPLOY_ECS.md)，核心步骤：`gunicorn` 运行 WSGI、`nginx` 反向代理、`systemd` 守护进程。
+
+## 用户使用文档
+
+面向最终用户的完整使用说明（生成密钥、上传公钥、发送加密消息、解密）见 → [USER_GUIDE.md](USER_GUIDE.md)
+
+## 项目结构
 
 ```
-cd existing_repo
-git remote add origin https://git.tsinghua.edu.cn/ai_logistics_edu/keyhub.git
-git branch -M main
-git push -uf origin main
+keyhub/
+├── app.py                  # Flask 主应用（路由：gate / index / register / send）
+├── crypto_utils.py         # GPG 公钥校验与加密（PGPy + AES-256）
+├── storage.py              # JSON 文件存储（fcntl.flock 跨进程锁）
+├── mailer.py               # 可选的 SMTP 加密邮件发送
+├── backup_oss.py           # 可选的 OSS 增量备份
+├── templates/              # Jinja2 页面模板
+├── static/                 # 前端样式
+├── data/users.json         # 用户数据（运行时生成）
+├── DEPLOY_ECS.md           # ECS 部署文档
+└── USER_GUIDE.md           # 用户使用文档
 ```
 
-## Integrate with your tools
+## 安全说明
 
-* [Set up project integrations](https://git.tsinghua.edu.cn/ai_logistics_edu/keyhub/-/settings/integrations)
-
-## Collaborate with your team
-
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+- 明文消息仅在加密过程中存在于服务器内存，加密后立即丢弃，不写入任何存储
+- GPG 公钥上传时会校验 `is_public`，拒绝私钥
+- 用户数据写入采用「临时文件 + `os.replace` 原子替换」+ `fcntl.flock` 跨进程锁，防止并发损坏
+- 邀请码机制防止匿名用户冒用他人邮箱上传公钥（身份假冒攻击）

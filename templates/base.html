@@ -11,8 +11,14 @@
     <div class="container topbar-inner">
       <a class="logo" href="{{ url_for('index') }}">🔐 KeyHub</a>
       <nav>
-        <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}active{% endif %}">加密消息</a>
-        <a href="{{ url_for('register') }}" class="{% if request.endpoint == 'register' %}active{% endif %}">注册 / 上传公钥</a>
+        {% if session.get('invited') or not invite_code_enabled %}
+          <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}active{% endif %}">加密消息</a>
+          <a href="{{ url_for('register') }}" class="{% if request.endpoint == 'register' %}active{% endif %}">注册 / 上传公钥</a>
+          <a href="{{ url_for('guide') }}" class="{% if request.endpoint == 'guide' %}active{% endif %}">用户指南</a>
+          {% if session.get('invited') %}
+            <a href="{{ url_for('logout') }}" class="nav-logout">退出</a>
+          {% endif %}
+        {% endif %}
       </nav>
     </div>
   </header>

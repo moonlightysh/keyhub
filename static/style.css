@@ -62,6 +62,8 @@ code {
 }
 .topbar nav a:hover { background: rgba(255,255,255,0.08); text-decoration: none; }
 .topbar nav a.active { background: var(--primary); }
+.topbar nav a.nav-logout { background: rgba(255,255,255,0.06); }
+.topbar nav a.nav-logout:hover { background: rgba(207,34,46,0.5); }
 
 /* ========== Hero ========== */
 .hero {

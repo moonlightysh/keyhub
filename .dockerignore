@@ -1,21 +1,23 @@
-# 不打进镜像的文件（减小构建上下文，避免把本地 .venv / 敏感配置 / 用户数据传进 Docker daemon）
-.venv/
-venv/
-env/
-__pycache__/
+# .dockerignore - 构建镜像时排除这些文件，减小构建上下文和镜像体积
+.git
+.gitignore
+.venv
+venv
+__pycache__
 *.pyc
 *.pyo
-
-# 数据 & 敏感配置
-data/
+*.egg-info
 .env
 .env.local
+data/
+logs/
+*.md
 *.log
-
-# 系统/IDE
+tests_smoke.py
+docker-compose.yml
+Dockerfile
+.dockerignore
+keyhub.service.example
+.mypy_cache
+.pytest_cache
 .DS_Store
-.idea/
-.vscode/
-tests_smoke.py            # 仅本地冒烟测试用
-DEPLOY_ECS.md             # 文档
-keyhub.service.example    # systemd 配置，容器里不需要
