@@ -4,10 +4,14 @@
   - 邀请码正确后可访问
   - 邀请码错误被拒绝
   - 注册时上传私钥被拒绝
+
+注意：所有安全测试依赖 app.py → crypto_utils → pgpy，pgpy 不可用时整体 skip。
 """
 import pytest
+from conftest import pgpy_required
 
 
+@pgpy_required
 class TestInviteGate:
     """邀请码门禁逻辑测试。"""
 
@@ -55,6 +59,7 @@ class TestInviteGate:
         assert r2.status_code == 200
 
 
+@pgpy_required
 class TestPrivateKeyRejection:
     """注册时上传私钥必须被拒绝。"""
 

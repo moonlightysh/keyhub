@@ -3,14 +3,19 @@ crypto_utils 模块单元测试：
   - validate_public_key: 空输入 / 合法公钥 / 私钥拒绝 / 非法文本
   - encrypt_with_public_key: 空明文 / 空公钥 / 加密结果为 ASCII Armor / 可被对应私钥解密
 """
-import pgpy
 import pytest
+from conftest import pgpy_required, PGPY_AVAILABLE
 
-from crypto_utils import validate_public_key, encrypt_with_public_key
+# pgpy 不可用时（如 CI 缺 libbz2），crypto_utils 也无法导入，
+# 整个文件的测试会被 @pgpy_required skip，所以这里条件导入即可。
+if PGPY_AVAILABLE:
+    import pgpy
+    from crypto_utils import validate_public_key, encrypt_with_public_key
 
 
 # ---------- validate_public_key ----------
 
+@pgpy_required
 class TestValidatePublicKey:
     def test_empty_input(self):
         ok, err, fp = validate_public_key("")
@@ -43,6 +48,7 @@ class TestValidatePublicKey:
 
 # ---------- encrypt_with_public_key ----------
 
+@pgpy_required
 class TestEncryptWithPublicKey:
     def test_empty_plaintext_raises(self, tmp_keypair):
         with pytest.raises(ValueError):

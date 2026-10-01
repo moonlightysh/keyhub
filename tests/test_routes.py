@@ -6,9 +6,13 @@ Flask 路由集成测试：
   - /send 加密消息（离线模式）
   - /guide 用户指南
   - /logout 退出
+
+注意：所有路由测试依赖 app.py → crypto_utils → pgpy，pgpy 不可用时整体 skip。
 """
+from conftest import pgpy_required
 
 
+@pgpy_required
 class TestHealthz:
     def test_healthz_ok(self, app_client):
         r = app_client.get("/healthz")
@@ -19,6 +23,7 @@ class TestHealthz:
         assert isinstance(body["users"], int)
 
 
+@pgpy_required
 class TestRegister:
     def test_register_get(self, app_client):
         r = app_client.get("/register")
@@ -34,6 +39,7 @@ class TestRegister:
         assert r.status_code == 200
 
 
+@pgpy_required
 class TestIndex:
     def test_index_lists_users(self, app_client, tmp_keypair):
         # 先注册一个用户
@@ -48,6 +54,7 @@ class TestIndex:
         assert tmp_keypair["email"] in html
 
 
+@pgpy_required
 class TestSend:
     def test_send_offline_returns_ciphertext(self, app_client, tmp_keypair):
         app_client.post("/register", data={
@@ -66,6 +73,7 @@ class TestSend:
         assert "一键复制密文" in html
 
 
+@pgpy_required
 class TestGuide:
     def test_guide_page_loads(self, app_client):
         r = app_client.get("/guide")
@@ -75,6 +83,7 @@ class TestGuide:
         assert "KeyHub" in html
 
 
+@pgpy_required
 class TestLogout:
     def test_logout_redirects_to_gate(self, app_client):
         r = app_client.get("/logout", follow_redirects=False)

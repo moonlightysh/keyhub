@@ -3,28 +3,45 @@ pytest 共享 fixtures：
   - tmp_keypair: 生成临时 RSA-3072 密钥对（公钥/私钥/邮箱）
   - isolated_storage: 把 storage 模块的数据文件重定向到临时目录，测试间互不污染
   - app_client: 提供 Flask test client
+
+注意：pgpy 依赖系统库 libbz2，部分 CI 环境（如云效 alinux3）可能缺失。
+      pgpy 不可用时，依赖它的测试会被 skip，不影响其他测试运行。
 """
 import os
 import sys
-import json
-import tempfile
-import shutil
 
 import pytest
-import pgpy
-from pgpy.constants import (
-    PubKeyAlgorithm, KeyFlags, HashAlgorithm,
-    SymmetricKeyAlgorithm, CompressionAlgorithm,
-)
 
 # 让 tests 目录能 import 项目根目录的模块
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
+# pgpy 依赖系统库 libbz2，缺失时 _bz2 扩展导入失败
+try:
+    import pgpy  # noqa: F401
+    from pgpy.constants import (
+        PubKeyAlgorithm, KeyFlags, HashAlgorithm,
+        SymmetricKeyAlgorithm, CompressionAlgorithm,
+    )
+    PGPY_AVAILABLE = True
+    PGPY_IMPORT_ERROR = None
+except ImportError as e:
+    PGPY_AVAILABLE = False
+    PGPY_IMPORT_ERROR = str(e)
+
+
+# 标记：需要 pgpy 才能运行的测试
+pgpy_required = pytest.mark.skipif(
+    not PGPY_AVAILABLE,
+    reason=f"pgpy 不可用（系统缺 libbz2）: {PGPY_IMPORT_ERROR}",
+)
+
 
 @pytest.fixture(scope="session")
 def tmp_keypair():
     """生成一对临时 GPG RSA-3072 密钥（带加密子密钥），整个 session 复用一次。"""
+    if not PGPY_AVAILABLE:
+        pytest.skip(f"pgpy 不可用: {PGPY_IMPORT_ERROR}")
     key = pgpy.PGPKey.new(PubKeyAlgorithm.RSAEncryptOrSign, 3072)
     uid = pgpy.PGPUID.new("Test User", email="alice@test.local")
     key.add_uid(
@@ -63,7 +80,10 @@ def app_client(monkeypatch, tmp_path):
     """
     返回 Flask test client。
     自动隔离 storage 到临时目录，并确保以离线密文模式启动（不依赖 SMTP）。
+    pgpy 不可用时 skip（app.py 依赖 crypto_utils → pgpy）。
     """
+    if not PGPY_AVAILABLE:
+        pytest.skip(f"pgpy 不可用，无法导入 app: {PGPY_IMPORT_ERROR}")
     import storage
     users_file = tmp_path / "users.json"
     users_file.write_text("[]", encoding="utf-8")
